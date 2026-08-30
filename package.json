@@ -1,6 +1,8 @@
 {
   "name": "talkingstage",
   "version": "7.0.0",
+  "description": "Live presentations with zero prep. An autonomous, voice-directed presentation engine that builds presentation slides in real time as you speak.",
+  "license": "MIT",
   "private": true,
   "engines": {
     "node": ">=22.13.0"

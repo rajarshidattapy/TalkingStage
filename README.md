@@ -7,16 +7,31 @@
 [![React 19](https://img.shields.io/badge/React-19.2.6-61DAFB?style=flat&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.2-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
-[![OpenAI Realtime](https://img.shields.io/badge/OpenAI-Realtime_WebRTC-412991?style=flat&logo=openai)](https://platform.openai.com/)
+[![WebRTC](https://img.shields.io/badge/WebRTC-Live_Voice_Director-412991?style=flat&logo=webrtc)](https://webrtc.org/)
 [![Google Gemini](https://img.shields.io/badge/Google-Gemini_GenAI-4285F4?style=flat&logo=google)](https://ai.google.dev/)
 [![Sarvam AI](https://img.shields.io/badge/Sarvam_AI-Speech_&_Doc_AI-orange?style=flat)](https://www.sarvam.ai/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.13-339933?style=flat&logo=node.js)](https://nodejs.org/)
+
+---
+
+## 🖼️ Application Preview
+
+### 1. Live Presentation Studio
+*The real-time presentation canvas dynamically rendering slides, contextual AI-generated imagery, live audio waveform, and multi-format exports as you speak.*
+
+![TalkingStage Live Presentation Studio](public/screenshots/talkingstage-live-studio.png)
+
+### 2. Pre-Session Setup & Briefing Intelligence
+*Configure presentation vibe presets, ingest PDF briefing notes via Document AI, conduct web research, and curate topic imagery before stepping up to speak.*
+
+![TalkingStage Setup Screen](public/screenshots/talkingstage-setup-screen.png)
 
 ---
 
 ## 📖 Overview
 
-**TalkingStage** is an autonomous, voice-driven live presentation director. Instead of building static slide decks in advance, you simply speak. TalkingStage listens to your natural voice over low-latency WebRTC, detects semantic shifts, structures your narrative into clean visual scenes, semantically selects relevant imagery and assets, generates cinematic contextual backgrounds on the fly, and exports the final presentation into high-fidelity PDF and PPTX decks.
+**TalkingStage** is an autonomous, voice-directed live presentation director. Instead of spending hours building static slide decks before a meeting, you simply speak. TalkingStage listens to your natural voice over ultra-low-latency WebRTC, detects semantic shifts, structures your narrative into clean visual scenes, semantically selects relevant imagery and assets, generates cinematic contextual backgrounds on the fly, and exports the final presentation into high-fidelity PDF and PowerPoint decks.
 
 Whether pitching to investors, delivering a technical deep dive, leading a board meeting, or running a brainstorm, TalkingStage turns spontaneous conversation into an interactive presentation.
 
@@ -25,17 +40,17 @@ Whether pitching to investors, delivering a technical deep dive, leading a board
 ## ✨ Key Features
 
 ### 🎬 Real-Time AI Presentation Director
-- **Zero-Latency Voice Director**: Streams microphone audio over WebRTC to OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`) with server-side Voice Activity Detection (VAD) and far-field noise suppression.
-- **Dynamic Visual Decisions**: The AI director decides the layout and cadence on every turn via the `stage_visuals` tool:
+- **Zero-Latency Voice Director**: Streams microphone audio over WebRTC to a high-speed live director engine with server-side Voice Activity Detection (VAD) and far-field noise suppression.
+- **Dynamic Visual Decisions**: The AI director decides the layout and cadence on every turn via the `stage_visuals` decision engine:
   - `replace`: Launches a brand-new semantic scene/beat.
   - `merge_cards`: Progressively expands and evolves a multi-point list in place.
   - `focus`: Highlights, refines, or adds detail to the active concept.
   - `hold`: Suppresses updates during background noise or repetitions.
-- **High-Sensitivity Live Composition**: Recomposes visual grammar every 2–3 substantive turns so the stage stays dynamic and engaging.
+- **High-Sensitivity Live Composition**: Recomposes visual grammar every 2–3 substantive turns so the stage stays dynamic, structured, and visually engaging.
 
 ### 🛡️ Resilient Dual-Engine Speech Transcription
-- **Primary WebRTC STT**: OpenAI Whisper live transcription directly inside the WebRTC session.
-- **Sarvam AI Realtime Fallback**: An in-browser `AudioWorkletProcessor` converts microphone audio to 16 kHz 16-bit mono PCM (`linear16`). If OpenAI's transcription is delayed, empty, or fails, the stream routes seamlessly to Sarvam AI (`saaras:v3-realtime`) WebSocket for instant transcript recovery.
+- **Primary Live STT**: Streaming real-time speech-to-text directly inside the WebRTC session.
+- **Sarvam AI Realtime Fallback**: An in-browser `AudioWorkletProcessor` converts microphone audio to 16 kHz 16-bit mono PCM (`linear16`). If the primary transcription is delayed, empty, or fails, the stream routes seamlessly to Sarvam AI (`saaras:v3-realtime`) WebSocket for instant transcript recovery.
 
 ### 🎨 Intelligent Visual Grammar & Dynamic Diagrams
 - **4 Expressive Scene Archetypes**:
@@ -59,9 +74,9 @@ Whether pitching to investors, delivering a technical deep dive, leading a board
 - **Semantic Asset Ranking**: Automatically scores and maps uploaded assets to live speech context without requiring the speaker to recite filenames.
 
 ### ⚡ Pre-Session Setup & Briefing Intelligence
-- **Persistent Vibe Engine**: Save and reuse tone descriptors (e.g., *"YC Demo Day pitch"*, *"Visionary Keynote"*, *"Technical Architecture"*) powered by Node 22's built-in SQLite (`DatabaseSync`).
+- **Persistent Vibe Engine**: Save and reuse tone descriptors (e.g., *"Confident, data-driven, a little playful"*, *"Visionary Keynote"*, *"Technical Architecture"*) powered by Node 22's built-in SQLite (`DatabaseSync`).
 - **Sarvam Document AI PDF Ingestion**: Upload briefing PDFs up to 60 pages; automatically chunks, digitizes, and extracts structured Markdown via Sarvam OCR.
-- **Live Web Research with OpenAI**: Live web search tool writes concise, fact-checked briefing bullets with citations automatically extracted.
+- **Live Web Research**: Live web search tool writes concise, fact-checked briefing bullets with citations automatically extracted.
 - **Anakin Web Scraper**: Discovers topic tags and scrapes high-resolution stock photography (Unsplash, Pexels) and Wikipedia context directly into the presentation library.
 
 ### 🚀 Live Stage Controls & Instant Multi-Format Export
@@ -85,8 +100,8 @@ Whether pitching to investors, delivering a technical deep dive, leading a board
                                        |                       (16kHz PCM16)
                                        v                             |
                     +-------------------------------------+          v
-                    |       OpenAI Realtime Session       |   +--------------+
-                    |  (gpt-realtime-2.1 + Whisper STT)   |   |  Sarvam AI   |
+                    |     Live Voice Director Session     |   +--------------+
+                    |    (WebRTC Low-Latency Director)    |   |  Sarvam AI   |
                     +-------------------------------------+   | (saaras:v3)  |
                                        |                      +--------------+
                              stage_visuals Tool                      |
@@ -128,11 +143,11 @@ Whether pitching to investors, delivering a technical deep dive, leading a board
 | **Framework** | [Next.js 16 (Turbopack)](https://nextjs.org/) | App Router, Server Actions, API Routes, Streaming |
 | **UI & Styling** | [React 19](https://react.dev/) + [Tailwind CSS v4](https://tailwindcss.com/) | Real-time reactive stage, design tokens, responsive layout |
 | **Icons & Visuals** | [Lucide React](https://lucide.dev/) (119 icons) | Dynamic semantic diagramming and card iconography |
-| **Live Voice & VAD** | [OpenAI Realtime API](https://platform.openai.com/) | Real-time WebRTC audio director and primary Whisper transcription |
+| **Live Voice & VAD** | [WebRTC Voice Engine](https://webrtc.org/) | Real-time WebRTC audio director and primary transcription |
 | **Speech Fallback** | [Sarvam AI](https://www.sarvam.ai/) (`saaras:v3-realtime`) | WebSocket fallback speech-to-text with PCM audio tap |
 | **Document AI** | [Sarvam AI Doc AI](https://www.sarvam.ai/) | PDF digitization and structured Markdown extraction |
 | **Generative Imagery** | [Google Gemini](https://ai.google.dev/) (`gemini-3.1-flash-lite-image`) | Real-time contextual 16:9 photography and moodboard conditioning |
-| **Web Research** | [OpenAI Responses](https://platform.openai.com/) + [Anakin](https://anakin.io/) | Live web search, topic extraction, and stock photo scraping |
+| **Web Research** | [Web Search Tools](https://platform.openai.com/) + [Anakin](https://anakin.io/) | Live web search, topic extraction, and stock photo scraping |
 | **Local Storage** | [Node.js 22 SQLite](https://nodejs.org/api/sqlite.html) (`DatabaseSync`) | Zero-dependency local persistence for presentation vibes |
 | **Export Engines** | [jspdf](https://github.com/parallax/jsPDF) + [pptxgenjs](https://gitbrent.github.io/PptxGenJS/) + [html-to-image](https://github.com/bubkoo/html-to-image) | Vector & raster 16:9 PDF and editable PowerPoint export |
 
@@ -149,10 +164,10 @@ TalkingStage/
 │   │   │   └── generate/route.ts    # Pre-session batch image generator from notes
 │   │   ├── notes/
 │   │   │   ├── pdf/route.ts         # Sarvam Document AI PDF digitization
-│   │   │   └── search/route.ts      # OpenAI web search for briefing notes
-│   │   ├── realtime/route.ts        # OpenAI WebRTC realtime session minting
+│   │   │   └── search/route.ts      # Web search for briefing notes
+│   │   ├── realtime/route.ts        # WebRTC live director session minting
 │   │   ├── research/route.ts        # Anakin URL scraper for photos & Wikipedia
-│   │   ├── tags/route.ts            # Topic tag extractor via OpenAI
+│   │   ├── tags/route.ts            # Topic tag extractor
 │   │   ├── transcribe/route.ts      # Sarvam AI fallback STT WebSocket bridge
 │   │   └── vibes/route.ts           # SQLite vibe persistence API
 │   ├── globals.css                  # Custom design tokens, animations, and stage styling
@@ -161,17 +176,20 @@ TalkingStage/
 ├── config/
 │   ├── brand.json                   # Brand identity, promise, and category
 │   └── v1.json .. v7.json           # Versioned configurations and model parameters
-├── lib/
+├── public/
+│   ├── screenshots/                 # High-resolution application screenshots
+│   └── favicon.svg                  # Brand favicon & SVGs
 │   ├── anakin.ts                    # Anakin scraper integration & URL builders
 │   ├── iconography.ts               # Semantic Lucide icon vocabulary
 │   ├── pcm.ts                       # Float32 to linear16 PCM conversion helpers
 │   ├── presentation-assets.ts       # Semantic asset ranking, catalog encoding, & fit logic
-│   ├── realtime-models.ts           # Supported OpenAI Realtime models
+│   ├── realtime-models.ts           # Supported voice director models
 │   ├── request-guards.ts            # Rate limiting & cross-origin security guards
 │   └── vibes.ts                     # Native Node 22 SQLite vibe store
 ├── public/                          # Favicons, SVGs, and brand assets
 ├── tests/                           # Node test runner suite (160+ unit & integration tests)
 ├── .env.example                     # Environment variable blueprint
+├── LICENSE                          # MIT Open Source License
 ├── next.config.ts                   # Next.js & Turbopack bundle configuration
 ├── package.json                     # Dependencies and run scripts
 └── tsconfig.json                    # TypeScript configuration
@@ -201,7 +219,7 @@ Create a `.env.local` file from the example:
 cp .env.example .env.local
 ```
 
-Populate the required API keys:
+Populate the API keys:
 
 ```ini
 # Live Voice Director & Web Search (Required for live voice)
@@ -239,12 +257,12 @@ node --test tests/*.test.mjs
 
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
-| `/api/realtime` | `POST` | Mints WebRTC SDP session with OpenAI Realtime Director and configures tools. |
+| `/api/realtime` | `POST` | Mints WebRTC SDP session with Live Voice Director and configures tools. |
 | `/api/transcribe` | `POST` | Streams 16 kHz PCM audio to Sarvam AI WebSocket fallback transcription. |
 | `/api/imagery` | `POST` | Generates a 16:9 Gemini background image for the current scene. |
 | `/api/imagery/generate` | `POST` | Generates a batch of illustrative photographs from briefing notes. |
 | `/api/notes/pdf` | `POST` | Uploads a PDF to Sarvam Document AI and returns Markdown. |
-| `/api/notes/search` | `POST` | Searches the web using OpenAI Responses API and returns bulleted notes. |
+| `/api/notes/search` | `POST` | Searches the web and returns bulleted briefing notes with citations. |
 | `/api/research` | `POST` | Uses Anakin to scrape stock photos and Wikipedia articles for topic tags. |
 | `/api/tags` | `POST` | Extracts 1–3 word searchable topic tags from tone and notes. |
 | `/api/vibes` | `GET` / `POST` | Retrieves or persists presentation vibe presets in SQLite. |
@@ -270,6 +288,30 @@ node --test tests/*.test.mjs
 
 ---
 
-## 📄 License
+## 📄 Licensing & Open Source
 
 This project is licensed under the **MIT License**.
+
+```text
+MIT License
+
+Copyright (c) 2026 TalkingStage Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
