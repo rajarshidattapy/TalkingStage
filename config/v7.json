@@ -9,7 +9,9 @@
   },
   "realtime": {
     "model": "gpt-realtime-2.1",
-    "output_modalities": ["text"],
+    "output_modalities": [
+      "text"
+    ],
     "max_output_tokens": 800,
     "transcription_model": "gpt-realtime-whisper",
     "noise_reduction": "far_field",
@@ -75,7 +77,8 @@
     "first_speech_action": "replace",
     "include_cover_in_export": false,
     "motion_beat_ms": 1600,
-    "recent_scene_limit": 5
+    "recent_scene_limit": 5,
+    "resume_scene_limit": 12
   },
   "visuals": {
     "iconography": {

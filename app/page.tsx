@@ -1055,6 +1055,7 @@ export default function Home() {
   const fallbackUnavailableRef = useRef(false);
   const vibeRef = useRef("");
   const notesRef = useRef("");
+  const deckScenesRef = useRef<Scene[]>([]);
 
   useEffect(() => {
     sceneRef.current = scene;
@@ -1071,6 +1072,10 @@ export default function Home() {
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
+
+  useEffect(() => {
+    deckScenesRef.current = deckScenes;
+  }, [deckScenes]);
 
   useEffect(() => {
     if (!v7.setup.enabled) return;
@@ -2139,6 +2144,12 @@ export default function Home() {
           sdp: offer.sdp,
           vibe: vibeRef.current,
           notes: notesRef.current,
+          resume: deckScenesRef.current.map((staged) => ({
+            sequence: staged.sequence,
+            kind: staged.kind,
+            eyebrow: staged.eyebrow,
+            title: staged.title,
+          })),
         }),
       });
 

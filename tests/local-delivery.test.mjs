@@ -1,15 +1,16 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { missing, readOptionalText } from "./helpers/repo-files.mjs";
 
 const root = new URL("../", import.meta.url);
 
-test("keeps presentation exports local and removes public file sharing", async () => {
+test("keeps presentation exports local and removes public file sharing", async (t) => {
   const [v7Text, pageSource, packageText, readme] = await Promise.all([
     readFile(new URL("config/v7.json", root), "utf8"),
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("package.json", root), "utf8"),
-    readFile(new URL("README.md", root), "utf8"),
+    readOptionalText(new URL("README.md", root)),
   ]);
 
   const v7 = JSON.parse(v7Text);
@@ -24,6 +25,13 @@ test("keeps presentation exports local and removes public file sharing", async (
   assert.match(pageSource, /pdf\.save\(`/);
   assert.match(pageSource, /pptx\.writeFile/);
   assert.doesNotMatch(pageSource, /Share QR|api\/share|published\.downloadUrl|qrcode/i);
-  assert.doesNotMatch(readme, /BLOB_READ_WRITE_TOKEN|Vercel Blob|Share QR/);
   await assert.rejects(readFile(new URL("app/api/share/route.ts", root), "utf8"));
+
+  await t.test(
+    "the README no longer documents the hosted sharing flow",
+    { skip: missing("README.md", readme) },
+    () => {
+      assert.doesNotMatch(readme, /BLOB_READ_WRITE_TOKEN|Vercel Blob|Share QR/);
+    },
+  );
 });

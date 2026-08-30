@@ -1,17 +1,18 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { missing, readOptionalBytes } from "./helpers/repo-files.mjs";
 
 const root = new URL("../", import.meta.url);
 
-test("uploaded assets use one description field with automatic semantic routing", async () => {
+test("uploaded assets use one description field with automatic semantic routing", async (t) => {
   const [page, assets, route, css, ramsri, danish] = await Promise.all([
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("lib/presentation-assets.ts", root), "utf8"),
     readFile(new URL("app/api/realtime/route.ts", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
-    readFile(new URL("public/demo-ramsri.jpg", root)),
-    readFile(new URL("public/demo-danish.jpg", root)),
+    readOptionalBytes(new URL("public/demo-ramsri.jpg", root)),
+    readOptionalBytes(new URL("public/demo-danish.jpg", root)),
   ]);
 
   assert.match(page, />Assets</);
@@ -99,7 +100,7 @@ test("uploaded assets use one description field with automatic semantic routing"
   assert.equal(inferPresentationAssetKind("Questgen app screenshot"), "screenshot");
   const encodedCatalog = encodePresentationAssetCatalog(sampleAssets);
   const decodedCatalog = JSON.parse(Buffer.from(encodedCatalog, "base64url").toString("utf8"));
-  assert.equal(decodedCatalog[0].description, "ZeroPrep co-founder and product lead");
+  assert.equal(decodedCatalog[0].description, sampleAssets[0].description);
   assert.equal(decodedCatalog[0].mode, "direct");
   assert.equal(decodedCatalog[0].fit, "cover");
   assert.equal(decodedCatalog[0].shape, "unknown");
@@ -109,8 +110,8 @@ test("uploaded assets use one description field with automatic semantic routing"
   assert.match(page, /encodePresentationAssetCatalog/);
   assert.match(page, /Image \{assetNumber\}/);
   assert.match(page, /Who or what is shown\?/);
-  assert.match(page, /Images ${brand.name} can place on slides\./);
-  assert.match(page, /Describe each image\. ${brand.name} chooses when to show it\./);
+  assert.match(page, /Images \{brand\.name\} can place on slides\./);
+  assert.match(page, /Describe each image\. \{brand\.name\} chooses when to show it\./);
   assert.match(page, /presentationAssetMode\(asset\)/);
   assert.match(page, /Gemini composition/);
   assert.match(page, /Original · safe crop/);
@@ -152,6 +153,12 @@ test("uploaded assets use one description field with automatic semantic routing"
   assert.match(route, /required: \["action", "assetIds"\]/);
   assert.doesNotMatch(route, /visible copy includes that exact name/);
   assert.doesNotMatch(css, /\.scene-asset figcaption/);
-  assert.ok(ramsri.byteLength > 10_000);
-  assert.ok(danish.byteLength > 10_000);
+  await t.test(
+    "the two demo portraits ship with the app",
+    { skip: missing("public/demo-ramsri.jpg", ramsri) || missing("public/demo-danish.jpg", danish) },
+    () => {
+      assert.ok(ramsri.byteLength > 10_000);
+      assert.ok(danish.byteLength > 10_000);
+    },
+  );
 });

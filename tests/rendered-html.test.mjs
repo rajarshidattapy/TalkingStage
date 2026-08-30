@@ -25,7 +25,11 @@ test("defines the TalkingStage presentation studio and metadata", async () => {
     .map(([, selector]) => selector.trim());
 
   assert.equal(brand.name, "TalkingStage");
-  assert.match(layout, /Live presentations\. Zero prep\./);
+  // The tagline moved out of layout.tsx and into brand.json during the rename,
+  // so lock the copy at its source and check that the metadata still carries it
+  // rather than grepping layout for a literal that is now interpolated.
+  assert.equal(brand.tagline, "Live presentations. Zero prep.");
+  assert.match(layout, /\$\{brand\.tagline\}/);
   assert.match(layout, /\/og\.png/);
   assert.match(page, /Cover/);
   assert.match(page, /Start presentation/);

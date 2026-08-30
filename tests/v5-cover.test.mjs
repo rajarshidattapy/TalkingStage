@@ -5,7 +5,7 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("V5 opens on the TalkingStage cover and replaces it on first speech", async () => {
-  const [v4Text, v5Text, pageSource, routeSource, cssSource, packageText] =
+  const [v4Text, v5Text, pageSource, routeSource, cssSource, packageText, brandText] =
     await Promise.all([
       readFile(new URL("config/v4.json", root), "utf8"),
       readFile(new URL("config/v5.json", root), "utf8"),
@@ -13,10 +13,12 @@ test("V5 opens on the TalkingStage cover and replaces it on first speech", async
       readFile(new URL("app/api/realtime/route.ts", root), "utf8"),
       readFile(new URL("app/globals.css", root), "utf8"),
       readFile(new URL("package.json", root), "utf8"),
+      readFile(new URL("config/brand.json", root), "utf8"),
     ]);
   const v4 = JSON.parse(v4Text);
   const v5 = JSON.parse(v5Text);
   const packageJson = JSON.parse(packageText);
+  const brand = JSON.parse(brandText);
 
   assert.equal(v5.release, "V5");
   assert.equal(v5.inherits, "V4");
@@ -32,7 +34,7 @@ test("V5 opens on the TalkingStage cover and replaces it on first speech", async
   assert.equal(v5.presentation.motion_beat_ms, v4.presentation.motion_beat_ms);
   assert.equal(v5.presentation.recent_scene_limit, v4.presentation.recent_scene_limit);
 
-  assert.equal(packageJson.name, "gurudornaai-live-presentations");
+  assert.equal(packageJson.name, brand.slug);
   assert.match(pageSource, /kind:\s*"cover"/);
   assert.match(pageSource, /scene\.kind === "cover"/);
   assert.match(pageSource, /numberedNext\.kind !== "cover"/);

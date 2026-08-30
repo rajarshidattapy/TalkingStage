@@ -12,7 +12,14 @@ test("lets presenters discover, remember, and use a specific microphone", async 
 
   assert.match(page, /navigator\.mediaDevices\.enumerateDevices\(\)/);
   assert.match(page, /addEventListener\?\.\("devicechange"/);
-  assert.match(page, /zeroprep\.microphone-device-id/);
+  // The storage namespace has trailed two renames (gurudornaai -> zeroprep ->
+  // talkingstage) and pinning the literal prefix only re-breaks on the next
+  // one. What actually matters is that the remembered device survives a
+  // reload: one namespaced key, declared once, used for every access.
+  assert.match(page, /const MICROPHONE_STORAGE_KEY = "[a-z0-9]+\.microphone-device-id";/);
+  assert.match(page, /localStorage\.getItem\(MICROPHONE_STORAGE_KEY\)/);
+  assert.match(page, /localStorage\.setItem\(MICROPHONE_STORAGE_KEY, deviceId\)/);
+  assert.match(page, /localStorage\.removeItem\(MICROPHONE_STORAGE_KEY\)/);
   assert.match(page, /deviceId: \{ exact: requestedMicrophoneId \}/);
   assert.match(page, /id="microphone-input"/);
   assert.match(page, /System default microphone/);

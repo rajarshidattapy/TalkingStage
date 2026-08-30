@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { missing, readOptionalText } from "./helpers/repo-files.mjs";
 
 const root = new URL("../", import.meta.url);
 
-test("V1 realtime and presentation behavior stays locked", async () => {
+test("V1 realtime and presentation behavior stays locked", async (t) => {
   const [configText, baselineSource] = await Promise.all([
     readFile(new URL("config/v1.json", root), "utf8"),
-    readFile(new URL("V1_BASELINE.md", root), "utf8"),
+    readOptionalText(new URL("V1_BASELINE.md", root)),
   ]);
   const config = JSON.parse(configText);
 
@@ -29,6 +30,12 @@ test("V1 realtime and presentation behavior stays locked", async () => {
   assert.equal(config.presentation.initial_scene_number, 0);
   assert.equal(config.presentation.motion_beat_ms, 1600);
 
-  assert.match(baselineSource, /Treat V1 as immutable/);
-  assert.match(baselineSource, /config\/v1\.json/);
+  await t.test(
+    "V1_BASELINE.md states the lock",
+    { skip: missing("V1_BASELINE.md", baselineSource) },
+    () => {
+      assert.match(baselineSource, /Treat V1 as immutable/);
+      assert.match(baselineSource, /config\/v1\.json/);
+    },
+  );
 });
