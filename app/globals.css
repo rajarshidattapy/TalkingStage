@@ -3045,84 +3045,226 @@ kbd {
 
 /* ---------- Setup screen ---------- */
 
+/* ---- Landing: the cover, the start panel, and the optional prep spine ---- */
+
 .setup-screen {
-  width: min(980px, calc(100vw - 32px));
+  width: min(1080px, calc(100vw - 40px));
   margin: 0 auto;
-  padding: 32px 0 56px;
+  padding: 26px 0 76px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 46px;
 }
 
-.setup-intro p {
-  margin: 0 0 6px;
+.setup-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line);
+}
+
+.setup-bar b {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.setup-bar span {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
-.setup-intro h1 {
+.setup-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 40px;
+  align-items: start;
+}
+
+/* The cover is a real scene: accent rule, hard offset shadow, display type. */
+.hero-scene {
+  --accent: var(--ember);
+  padding: 26px 30px 34px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 6px solid var(--accent);
+  box-shadow: 13px 13px 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: box-shadow 900ms ease, border-top-color 900ms ease;
+}
+
+.hero-scene[data-accent="lime"] { --accent: var(--lime); }
+.hero-scene[data-accent="sky"] { --accent: var(--sky); }
+.hero-scene[data-accent="violet"] { --accent: var(--violet); }
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hero-scene h1 {
+  margin: 14px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(42px, 7vw, 88px);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.hero-scene > p {
+  margin: 18px 0 0;
+  max-width: 34ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.hero-start {
+  padding-top: 4px;
+}
+
+.hero-start h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(30px, 5vw, 52px);
-  line-height: 1.02;
-  letter-spacing: -0.02em;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-.setup-intro small {
-  display: block;
-  margin-top: 8px;
+.hero-start > p {
+  margin: 10px 0 0;
   font-size: 14px;
+  line-height: 1.55;
   color: var(--muted);
 }
 
-.setup-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+.hero-start-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 15px;
+  font-weight: 620;
+  cursor: pointer;
+  transition: transform 140ms ease;
 }
 
-.setup-field {
+.hero-start-button:hover:not(:disabled) {
+  transform: translateX(3px);
+}
+
+.hero-start-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hero-status {
+  margin: 12px 0 0;
+  min-height: 18px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Prep is a spine: what you are giving the director on the left, how on the right. */
+.prep {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--panel);
 }
 
-.setup-field-wide {
-  grid-column: 1 / -1;
-}
-
-.setup-field > span {
-  font-weight: 620;
-  font-size: 14px;
-}
-
-.setup-field > small {
+.prep-heading {
+  margin: 0 0 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--muted);
-  font-size: 12.5px;
 }
 
-.setup-field input[type="text"],
-.setup-field textarea {
+.prep-row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 28px;
+  padding: 26px 0;
+  border-top: 1px solid var(--line);
+}
+
+.prep-row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.prep-label > span,
+.prep-label > label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.prep-label small {
+  display: block;
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.prep-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* The row already spaces its children; drop their standalone margins. */
+.prep-control > * {
+  margin-top: 0;
+}
+
+.prep-label > label {
+  cursor: pointer;
+}
+
+.prep-control input[type="text"],
+.prep-control textarea {
   width: 100%;
-  margin-top: 4px;
-  padding: 10px 12px;
+  padding: 11px 13px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--paper);
+  background: var(--panel);
   color: var(--ink);
+  font-size: 14px;
   resize: vertical;
 }
 
-.setup-field textarea {
+.prep-control input[type="text"]:focus-visible,
+.prep-control textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.prep-control textarea {
   font-family: var(--font-mono);
   font-size: 12.5px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .setup-suggestions {
@@ -3331,58 +3473,50 @@ kbd {
   cursor: pointer;
 }
 
-.setup-note {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
+.hero-start .error-note {
+  margin-top: 12px;
 }
 
-.setup-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-}
+@media (max-width: 900px) {
+  .setup-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
 
-.setup-skip {
-  padding: 11px 16px;
-  border: none;
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
-  font-size: 13.5px;
-  cursor: pointer;
-}
-
-.setup-skip:hover {
-  color: var(--ink);
-}
-
-.setup-continue {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 14px;
-  font-weight: 620;
-  cursor: pointer;
-}
-
-.setup-continue:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+  .hero-scene {
+    box-shadow: 9px 9px 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
 }
 
 @media (max-width: 720px) {
-  .setup-grid {
+  .setup-screen {
+    gap: 34px;
+    padding-bottom: 56px;
+  }
+
+  .prep-row {
     grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 22px 0;
   }
 
   .setup-counter {
     margin-left: 0;
+  }
+
+  .setup-search input {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene,
+  .hero-start-button {
+    transition: none;
+  }
+
+  .hero-start-button:hover:not(:disabled) {
+    transform: none;
   }
 }

@@ -198,6 +198,10 @@ registerProcessor("pcm-tap", PcmTapProcessor);
 const MICROPHONE_STORAGE_KEY = "gurudornaai.microphone-device-id";
 const REALTIME_MODEL_STORAGE_KEY = "gurudornaai.realtime-model.v2";
 const IMAGE_REFLOW_DELAY_MS = 560;
+/** The four accents the director picks from, in the order the studio cycles them. */
+const SETUP_ACCENTS = ["ember", "lime", "sky", "violet"] as const;
+const SETUP_ACCENT_MS = 4200;
+
 const MAX_PRESENTATION_ASSETS = 12;
 const MAX_PRESENTATION_ASSET_BYTES = 5 * 1024 * 1024;
 const ASSET_KIND_LABELS: Record<PresentationAssetKind, string> = {
@@ -1024,6 +1028,7 @@ export default function Home() {
   const [notesQuery, setNotesQuery] = useState("");
   const [imagePrompt, setImagePrompt] = useState("");
   const [showImagePrompt, setShowImagePrompt] = useState(false);
+  const [accentIndex, setAccentIndex] = useState(0);
   const [setupNote, setSetupNote] = useState("");
 
   const sceneRef = useRef(scene);
@@ -1072,6 +1077,21 @@ export default function Home() {
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
+
+  /**
+   * The cover cycles the four scene accents while it waits — the same choice the
+   * director makes for every scene, made visible before a word is spoken.
+   */
+  useEffect(() => {
+    if (hasCompletedSetup) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (still.matches) return;
+    const timer = window.setInterval(
+      () => setAccentIndex((index) => (index + 1) % SETUP_ACCENTS.length),
+      SETUP_ACCENT_MS,
+    );
+    return () => window.clearInterval(timer);
+  }, [hasCompletedSetup]);
 
   useEffect(() => {
     deckScenesRef.current = deckScenes;
@@ -2441,17 +2461,55 @@ export default function Home() {
 
       {!hasCompletedSetup && (
         <section className="setup-screen" aria-label="Prepare your presentation">
-          <div className="setup-intro">
-            <p>{brand.display_name}</p>
-            <h1>{brand.tagline}</h1>
-            <small>{brand.promise}</small>
+          <header className="setup-bar">
+            <b>{brand.display_name}</b>
+          </header>
+
+          <div className="setup-hero">
+            <div className="hero-scene" data-accent={SETUP_ACCENTS[accentIndex]}>
+              <span className="hero-eyebrow">Cover</span>
+              <h1>{brand.tagline}</h1>
+              <p>{brand.promise}</p>
+            </div>
+
+            <div className="hero-start">
+              <h2>Start whenever you&rsquo;re ready</h2>
+              <p>
+                Nothing below is required. Anything you add — a vibe, notes, images — gives the
+                director more to work with.
+              </p>
+              <button
+                type="button"
+                className="hero-start-button"
+                disabled={setupBusy !== null}
+                onClick={completeSetup}
+              >
+                Start speaking
+                <span aria-hidden="true">→</span>
+              </button>
+              <p className="hero-status" role="status">
+                {setupBusy !== null ? setupNote || "Working…" : setupNote}
+              </p>
+              {error && (
+                <div className="error-note" role="alert">
+                  <span>!</span>
+                  <p>{error}</p>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="setup-grid">
-            <label className="setup-field">
-              <span>Vibe</span>
-              <small>How should this presentation feel?</small>
+          <div className="prep">
+            <h2 className="prep-heading">Optional prep</h2>
+
+            <div className="prep-row">
+              <div className="prep-label">
+                <label htmlFor="setup-vibe">Vibe</label>
+                <small>How the presentation should feel.</small>
+              </div>
+              <div className="prep-control">
               <input
+                id="setup-vibe"
                 type="text"
                 value={vibe}
                 maxLength={v7.setup.max_vibe_length}
@@ -2467,15 +2525,17 @@ export default function Home() {
                   ))}
                 </div>
               )}
-            </label>
+              </div>
+            </div>
 
-            <label className="setup-field setup-field-wide">
-              <span>Initial notes</span>
-              <small>
-                Anything the director should know. PDFs become Markdown, and you can look a
-                topic up on the web.
-              </small>
+            <div className="prep-row">
+              <div className="prep-label">
+                <label htmlFor="setup-notes">Notes</label>
+                <small>Facts, names, and figures the director should have.</small>
+              </div>
+              <div className="prep-control">
               <textarea
+                id="setup-notes"
                 value={notes}
                 rows={8}
                 maxLength={v7.setup.max_notes_chars}
@@ -2525,13 +2585,15 @@ export default function Home() {
                   {notes.length.toLocaleString()} / {v7.setup.max_notes_chars.toLocaleString()}
                 </span>
               </div>
-            </label>
+              </div>
+            </div>
 
-            <div className="setup-field setup-field-wide">
-              <span>Images</span>
-              <small>
-                Upload your own, or let {brand.name} find topic images on Unsplash and Pexels.
-              </small>
+            <div className="prep-row">
+              <div className="prep-label">
+                <span id="setup-images-label">Images</span>
+                <small>Pictures the director can place on slides.</small>
+              </div>
+              <div className="prep-control">
               <div className="setup-field-actions">
                 <label className="setup-file-button">
                   <Camera aria-hidden="true" />
@@ -2638,30 +2700,8 @@ export default function Home() {
                   ))}
                 </div>
               )}
+              </div>
             </div>
-          </div>
-
-          {setupNote && <p className="setup-note">{setupNote}</p>}
-          {error && (
-            <div className="error-note" role="alert">
-              <span>!</span>
-              <p>{error}</p>
-            </div>
-          )}
-
-          <div className="setup-actions">
-            <button type="button" className="setup-skip" onClick={completeSetup}>
-              Skip for now
-            </button>
-            <button
-              type="button"
-              className="setup-continue"
-              disabled={setupBusy !== null}
-              onClick={completeSetup}
-            >
-              Continue to studio
-              <span aria-hidden="true">↗</span>
-            </button>
           </div>
         </section>
       )}
