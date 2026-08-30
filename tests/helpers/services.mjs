@@ -16,8 +16,6 @@ register("./module-hooks.mjs", import.meta.url);
 
 const root = new URL("../../", import.meta.url);
 
-export const ORIGIN = "http://localhost:3000";
-
 export function loadRoute(name) {
   return import(new URL(`app/api/${name}/route.ts`, root));
 }

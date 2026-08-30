@@ -1018,7 +1018,12 @@ export default function Home() {
   const [notes, setNotes] = useState("");
   const [savedVibes, setSavedVibes] = useState<Array<{ id: number; text: string }>>([]);
   const [researchTags, setResearchTags] = useState<string[]>([]);
-  const [setupBusy, setSetupBusy] = useState<"pdf" | "research" | null>(null);
+  const [setupBusy, setSetupBusy] = useState<
+    "pdf" | "research" | "search" | "generate" | null
+  >(null);
+  const [notesQuery, setNotesQuery] = useState("");
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [showImagePrompt, setShowImagePrompt] = useState(false);
   const [setupNote, setSetupNote] = useState("");
 
   const sceneRef = useRef(scene);
@@ -1196,6 +1201,60 @@ export default function Home() {
     }
   }, []);
 
+  /**
+   * Anakin scrapes a URL you already have; this answers a question you do not.
+   * The findings land in the notes as ordinary text, so the presenter can edit
+   * or delete them before they ever reach the director.
+   */
+  const searchNotes = useCallback(async () => {
+    const query = notesQuery.trim();
+    if (query.length < 3) {
+      setError("Type what you want to look up first.");
+      return;
+    }
+
+    setSetupBusy("search");
+    setError("");
+    setSetupNote(`Searching the web for “${query}”…`);
+    try {
+      const response = await fetch("/api/notes/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const result = (await response.json()) as {
+        markdown?: string;
+        citations?: Array<{ title: string; url: string }>;
+        error?: string;
+      };
+      if (!response.ok || !result.markdown) {
+        throw new Error(result.error || "That search returned nothing usable.");
+      }
+
+      const sources = (result.citations || [])
+        .map((citation) => `- [${citation.title}](${citation.url})`)
+        .join("\n");
+      const block = [`## Web search: ${query}`, result.markdown, sources && `Sources:\n${sources}`]
+        .filter(Boolean)
+        .join("\n\n");
+
+      setNotes((current) =>
+        [current.trim(), block].filter(Boolean).join("\n\n").slice(0, v7.setup.max_notes_chars),
+      );
+      setNotesQuery("");
+      setSetupNote(
+        `Added ${result.citations?.length || 0} source${
+          result.citations?.length === 1 ? "" : "s"
+        } for “${query}”`,
+      );
+    } catch (searchError) {
+      setError(searchError instanceof Error ? searchError.message : "The web search failed.");
+      setSetupNote("");
+    } finally {
+      setSetupBusy(null);
+    }
+  }, [notesQuery]);
+
   /** Tags come from the setup content, then drive both scrape passes. */
   const runResearch = useCallback(async () => {
     if (!vibeRef.current.trim() && !notesRef.current.trim()) {
@@ -1289,6 +1348,85 @@ export default function Home() {
       setSetupBusy(null);
     }
   }, []);
+
+  /**
+   * Fills the asset library from the briefing notes. Subjects come from the
+   * notes alone — the vibe steers tone, not content — with the optional prompt
+   * acting as art direction over the top.
+   */
+  const generateImages = useCallback(async () => {
+    if (notesRef.current.trim().length < 40) {
+      setError("Add some initial notes first — the images are generated from them.");
+      return;
+    }
+
+    const remaining = MAX_PRESENTATION_ASSETS - presentationAssetsRef.current.length;
+    if (remaining <= 0) {
+      setError(`The image library is full (${MAX_PRESENTATION_ASSETS}). Remove one first.`);
+      return;
+    }
+
+    setSetupBusy("generate");
+    setError("");
+    setSetupNote(`Writing image ideas from your notes…`);
+    try {
+      const response = await fetch("/api/imagery/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: notesRef.current, prompt: imagePrompt }),
+      });
+      const result = (await response.json()) as {
+        images?: Array<{ prompt: string; dataUrl: string; mimeType: string }>;
+        requested?: number;
+        error?: string;
+      };
+      if (!response.ok || !result.images?.length) {
+        throw new Error(result.error || "No images could be generated.");
+      }
+
+      const added = await Promise.all(
+        result.images.slice(0, remaining).map(async (image, index) => {
+          let width: number | undefined;
+          let height: number | undefined;
+          try {
+            const decoded = await loadAssetImage(image.dataUrl);
+            width = decoded.naturalWidth || decoded.width;
+            height = decoded.naturalHeight || decoded.height;
+          } catch {
+            // Dimensions only refine layout; the asset is still usable without.
+          }
+          return {
+            id: `generated-${crypto.randomUUID()}`,
+            name: `Generated ${index + 1}`,
+            aliases: [],
+            description: image.prompt,
+            kind: inferPresentationAssetKind(image.prompt),
+            mimeType: image.mimeType,
+            width,
+            height,
+            url: image.dataUrl,
+          } satisfies PresentationAsset;
+        }),
+      );
+
+      setPresentationAssets((assets) => {
+        const next = [...assets, ...added];
+        presentationAssetsRef.current = next;
+        return next;
+      });
+      setShowImagePrompt(false);
+      setSetupNote(
+        `Generated ${added.length} image${added.length === 1 ? "" : "s"} from your notes`,
+      );
+    } catch (generateError) {
+      setError(
+        generateError instanceof Error ? generateError.message : "No images could be generated.",
+      );
+      setSetupNote("");
+    } finally {
+      setSetupBusy(null);
+    }
+  }, [imagePrompt]);
 
   const completeSetup = useCallback(() => {
     const trimmed = vibeRef.current.trim();
@@ -2322,7 +2460,10 @@ export default function Home() {
 
             <label className="setup-field setup-field-wide">
               <span>Initial notes</span>
-              <small>Anything the director should know. PDFs become Markdown.</small>
+              <small>
+                Anything the director should know. PDFs become Markdown, and you can look a
+                topic up on the web.
+              </small>
               <textarea
                 value={notes}
                 rows={8}
@@ -2344,6 +2485,31 @@ export default function Home() {
                     }}
                   />
                 </label>
+                <div className="setup-search">
+                  <Globe2 aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={notesQuery}
+                    maxLength={v7.notes.max_query_chars}
+                    disabled={setupBusy !== null}
+                    placeholder="Look up a topic on the web…"
+                    aria-label="Search the web and add the findings to your notes"
+                    onChange={(event) => setNotesQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      // Enter must not submit or start the session from here.
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      void searchNotes();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={setupBusy !== null || notesQuery.trim().length < 3}
+                    onClick={() => void searchNotes()}
+                  >
+                    {setupBusy === "search" ? "Searching…" : "Search"}
+                  </button>
+                </div>
                 <span className="setup-counter">
                   {notes.length.toLocaleString()} / {v7.setup.max_notes_chars.toLocaleString()}
                 </span>
@@ -2381,10 +2547,56 @@ export default function Home() {
                   <Search aria-hidden="true" />
                   <span>{setupBusy === "research" ? "Researching…" : "Research topics"}</span>
                 </button>
+                <button
+                  className="setup-research-button"
+                  type="button"
+                  disabled={setupBusy !== null}
+                  aria-expanded={showImagePrompt}
+                  onClick={() => setShowImagePrompt((open) => !open)}
+                >
+                  <Sparkles aria-hidden="true" />
+                  <span>
+                    {setupBusy === "generate" ? "Generating…" : "Generate images"}
+                  </span>
+                </button>
                 <span className="setup-counter">
                   {presentationAssets.length} / {MAX_PRESENTATION_ASSETS} images
                 </span>
               </div>
+              {showImagePrompt && (
+                <div className="setup-generate">
+                  <p>
+                    {v7.imagery.generated_batch_size} images, drawn from your initial notes.
+                    Add art direction if you want to steer the look.
+                  </p>
+                  <div className="setup-search">
+                    <Sparkles aria-hidden="true" />
+                    <input
+                      type="text"
+                      value={imagePrompt}
+                      maxLength={v7.imagery.max_steer_chars}
+                      disabled={setupBusy !== null}
+                      placeholder="Optional: warm documentary photography, golden hour…"
+                      aria-label="Optional art direction for the generated images"
+                      onChange={(event) => setImagePrompt(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        void generateImages();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={setupBusy !== null}
+                      onClick={() => void generateImages()}
+                    >
+                      {setupBusy === "generate"
+                        ? "Generating…"
+                        : `Generate ${v7.imagery.generated_batch_size}`}
+                    </button>
+                  </div>
+                </div>
+              )}
               {researchTags.length > 0 && (
                 <div className="setup-tags" aria-label="Topics found in your setup">
                   {researchTags.map((tag) => (

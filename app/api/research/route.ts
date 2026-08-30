@@ -27,12 +27,28 @@ function isAllowedImage(url: string) {
 }
 
 /**
+ * Search pages link the full-size original — Unsplash serves `w=3000`, which is
+ * 650 KB to 1.3 MB and blows past `max_image_bytes` for all but the smallest
+ * photo. Both CDNs resize on demand, so ask for the width the deck actually
+ * renders at. The byte cap stays as the backstop.
+ */
+function renditionUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("w", String(v7.delivery.export_width_px));
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+/**
  * Inlined as data URLs so scraped imagery behaves exactly like an upload:
  * no CORS, no next/image remote patterns, and html-to-image can still
  * rasterize it for the PDF/PPTX export without tainting the canvas.
  */
 async function inlineImage(url: string, signal: AbortSignal) {
-  const response = await fetch(url, { signal, redirect: "follow" });
+  const response = await fetch(renditionUrl(url), { signal, redirect: "follow" });
   if (!response.ok) throw new Error(`Image fetch failed (${response.status}).`);
   const type = (response.headers.get("content-type") || "").split(";")[0].trim();
   if (!["image/jpeg", "image/png", "image/webp"].includes(type)) {

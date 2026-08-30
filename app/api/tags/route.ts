@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import v7 from "@/config/v7.json";
 import {
   checkRateLimit,
@@ -9,7 +8,27 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const MAX_SOURCE_CHARS = 12_000;
+
+// The tags become Anakin scrape URLs (a stock photo search page, a Wikipedia
+// article), so brevity is a hard requirement, not a style note. Asking for the
+// shape in `instructions` and pinning the array in a strict schema keeps the
+// model from returning sentence-length "topics" that no source can answer.
+const TAG_INSTRUCTIONS = `You read a presentation setup and return the topics it is about.
+
+Each tag must be a concrete, searchable noun phrase of one to three words — the kind of thing you would type into a stock photo site or look up in an encyclopedia. Prefer subjects over adjectives, and never return the words "presentation", "slides", or the requested tone itself.
+
+The tone is context for what the talk is like. The notes are what it is about.`;
+
+type ResponseContent = { type?: string; text?: string; refusal?: string };
+type ResponseItem = { type?: string; content?: ResponseContent[] };
+type OpenAIResponse = {
+  status?: string;
+  output?: ResponseItem[];
+  error?: { message?: string };
+  incomplete_details?: { reason?: string };
+};
 
 function cleanTag(value: unknown) {
   return typeof value === "string"
@@ -21,6 +40,14 @@ function cleanTag(value: unknown) {
         .trim()
         .slice(0, 40)
     : "";
+}
+
+/** The first assistant message, skipping any reasoning items ahead of it. */
+function readOutputText(payload: OpenAIResponse) {
+  const message = payload.output?.find((item) => item.type === "message");
+  const refusal = message?.content?.find((part) => part.type === "refusal")?.refusal;
+  if (refusal) throw new Error(refusal);
+  return message?.content?.find((part) => part.type === "output_text")?.text || "";
 }
 
 export async function POST(request: Request) {
@@ -36,10 +63,10 @@ export async function POST(request: Request) {
   );
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "Tag extraction needs GEMINI_API_KEY in the server environment." },
+      { error: "Tag extraction needs OPENAI_API_KEY in the server environment." },
       { status: 503 },
     );
   }
@@ -57,31 +84,54 @@ export async function POST(request: Request) {
     return Response.json({ error: "Setup content is required." }, { status: 400 });
   }
 
+  // The caller's abort and our own deadline both have to cancel the upstream call.
+  const timeout = AbortSignal.timeout(v7.research.tag_timeout_ms);
+  const signal = AbortSignal.any([request.signal, timeout]);
+
   try {
-    const ai = new GoogleGenAI({ apiKey });
-    const interaction = await ai.interactions.create(
-      {
+    const upstream = await fetch(OPENAI_RESPONSES_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      signal,
+      body: JSON.stringify({
         model: v7.research.tag_model,
-        input: `Read the presentation setup below and return the topics it is about.
-
-Return between 3 and ${v7.research.max_tags} tags. Each tag must be a concrete, searchable noun phrase of one to three words — the kind of thing you would type into a stock photo site or look up in an encyclopedia. Prefer subjects over adjectives, and never return the words "presentation", "slides", or the requested tone itself.
-
-Return only a JSON array of strings, nothing else.
-
-<tone>${vibe}</tone>
-<notes>${notes}</notes>`,
         store: false,
-      },
-      {
-        timeout: v7.research.tag_timeout_ms,
-        maxRetries: 0,
-        fetchOptions: { signal: request.signal },
-      },
-    );
+        instructions: TAG_INSTRUCTIONS,
+        input: `<tone>${vibe}</tone>\n<notes>${notes}</notes>`,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "topic_tags",
+            strict: true,
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                tags: {
+                  type: "array",
+                  minItems: 3,
+                  maxItems: v7.research.max_tags,
+                  items: { type: "string" },
+                },
+              },
+              required: ["tags"],
+            },
+          },
+        },
+      }),
+    });
 
-    const text = String(interaction.output_text || "");
-    const match = text.match(/\[[\s\S]*\]/);
-    const parsed: unknown = match ? JSON.parse(match[0]) : [];
+    const payload = (await upstream.json()) as OpenAIResponse;
+    if (!upstream.ok) {
+      // OpenAI returns a readable reason; pass it through instead of a status code.
+      throw new Error(payload.error?.message || `OpenAI returned ${upstream.status}.`);
+    }
+
+    const text = readOutputText(payload);
+    const parsed: unknown = text ? (JSON.parse(text) as { tags?: unknown }).tags : [];
     const tags = [
       ...new Set(
         (Array.isArray(parsed) ? parsed : []).map(cleanTag).filter((tag) => tag.length >= 2),
@@ -94,6 +144,9 @@ Return only a JSON array of strings, nothing else.
     return Response.json({ tags }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (request.signal.aborted) return new Response(null, { status: 499 });
+    if (timeout.aborted) {
+      return Response.json({ error: "Topic extraction timed out." }, { status: 504 });
+    }
     const message = error instanceof Error ? error.message : "Tags could not be generated.";
     return Response.json({ error: message }, { status: 502 });
   }

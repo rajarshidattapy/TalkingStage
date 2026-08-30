@@ -25,13 +25,39 @@ type AnakinResponse = {
   generatedJson?: { images?: unknown };
 };
 
+// Anakin's scraper returns `{ alt, src, width, height }` per image, but the
+// async job payload has also been seen returning bare URL strings. Accept both.
+type AnakinImage = { src?: unknown; url?: unknown; width?: unknown; height?: unknown };
+
+/** A scraped page is mostly chrome: avatars, icons, and tracking pixels. */
+const MIN_IMAGE_EDGE = 200;
+
+function readImageUrl(candidate: unknown) {
+  if (typeof candidate === "string") return candidate;
+  if (!candidate || typeof candidate !== "object") return "";
+
+  const image = candidate as AnakinImage;
+  const source = typeof image.src === "string" ? image.src : image.url;
+  if (typeof source !== "string") return "";
+
+  // Dimensions arrive as strings when present; absent means unknown, not small.
+  const width = Number(image.width);
+  const height = Number(image.height);
+  const tooSmall =
+    (Number.isFinite(width) && width > 0 && width < MIN_IMAGE_EDGE) ||
+    (Number.isFinite(height) && height > 0 && height < MIN_IMAGE_EDGE);
+
+  return tooSmall ? "" : source;
+}
+
 function readResult(payload: AnakinResponse): ScrapeResult {
   const source = payload.data ?? payload;
   const images = [
     ...(Array.isArray(source.images) ? source.images : []),
     ...(Array.isArray(payload.generatedJson?.images) ? payload.generatedJson.images : []),
   ]
-    .filter((url): url is string => typeof url === "string" && /^https?:\/\//.test(url))
+    .map(readImageUrl)
+    .filter((url) => /^https?:\/\//.test(url))
     .slice(0, 24);
   const markdown = typeof source.markdown === "string" ? source.markdown : "";
   return { images: [...new Set(images)], markdown };
