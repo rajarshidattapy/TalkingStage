@@ -1,0 +1,11 @@
+{
+  "name": "TalkingStage",
+  "display_name": "TALKINGSTAGE",
+  "slug": "talkingstage",
+  "mark": "TS",
+  "category": "LIVE PRESENTATIONS",
+  "tagline": "Live presentations. Zero prep.",
+  "promise": "Speak naturally. TalkingStage builds the presentation live.",
+  "locked_at": "2026-08-30",
+  "status": "locked"
+}
